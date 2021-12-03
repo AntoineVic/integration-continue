@@ -2,39 +2,34 @@ pipeline {
     agent any
 
     stages {
-        stage('Package') {
+        stage('Build') {
             steps {
-            	sh 'mvn clean'
-                sh 'mvn package' 
+                bat "mvn -Dmaven.test.failure.ignore-true clean package"
+            }
+
+            post {
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts 'target/*.jar'
+                }
             }
         }
-        stage('Analyse') {
+        stage('Test') {
             steps {
-            	sh 'mvn checkstyle:checkstyle'
-                sh 'mvn spotbugs:spotbugs'
-                sh 'mvn pmd:pmd' 
+                echo "Test Stage"
+            }
+            
+        }
+        stage('Package') {
+            steps {
+                echo "Package Stage"
             }
         }
         stage('Publish') {
             steps {
-                archiveArtifacts '/target/*.jar'
+                echo "Publish Stage"
             }
         }
-        
+      
     }
-    
-    post {
-        always {
-            junit '**/surefire-reports/*.xml'
-            
-			recordIssues enabledForFailure: true, tools: [mavenConsole(), java(), javaDoc()]
-            recordIssues enabledForFailure: true, tool: checkStyle()
-            recordIssues enabledForFailure: true, tool: spotBugs()
-            recordIssues enabledForFailure: true, tool: cpd(pattern: '**/target/cpd.xml')
-            recordIssues enabledForFailure: true, tool: pmdParser(pattern: '**/target/pmd.xml')
-            
-        }
-
-    }
-
 }
